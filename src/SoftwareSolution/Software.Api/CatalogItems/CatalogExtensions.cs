@@ -9,17 +9,23 @@ public static class CatalogExtensions
     {
         public IEndpointRouteBuilder MapCatalogItemRoutes()
         {
+            // TODO: Contemplate Groups.
             var vendorGroup = builder.MapGroup("/vendors").RequireAuthorization();
 
-            vendorGroup.MapPost("/{vendorId:guid}/catalog-items", AddCatalogItem.AddCatalogItemAsync)
+            var vendorLookupGroup = vendorGroup.MapGroup("");
+
+
+            vendorLookupGroup.MapPost("/{vendorId:guid}/catalog-items", AddCatalogItem.AddCatalogItemAsync)
+                .RequireAuthorization("SoftwareCenter"); // if you got this far, you are authenticated (have a bearer token), so take this personally if you get an error here 403.
+
+
+
+            vendorLookupGroup.MapGet("/{vendorId:guid}/catalog-items", GetCatalogItemsByVendor.HandleAsync);
+
+            vendorLookupGroup.MapDelete("/{vendorId:guid}/catalog-items/{itemId:guid}", DeprecateCatalogItem.HandleAsync)
                 .RequireAuthorization("SoftwareCenter");
 
-            vendorGroup.MapGet("/{vendorId:guid}/catalog-items", GetCatalogItemsByVendor.HandleAsync);
-
-            vendorGroup.MapDelete("/{vendorId:guid}/catalog-items/{itemId:guid}", DeprecateCatalogItem.HandleAsync)
-                .RequireAuthorization("SoftwareCenter");
-
-            builder.MapGet("/catalog", GetAllCatalogItems.HandleAsync).RequireAuthorization();
+            vendorGroup.MapGet("/catalog", GetAllCatalogItems.HandleAsync).RequireAuthorization();
 
             return builder;
         }
